@@ -564,6 +564,74 @@ async def test_duckduckgo_timeout_returns_error(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_keenable_search_without_api_key_uses_public_endpoint(monkeypatch):
+    async def mock_post(self, url, **kw):
+        assert url == "https://api.keenable.ai/v1/search/public"
+        assert "X-API-Key" not in kw["headers"]
+        assert kw["headers"]["X-Keenable-Title"] == "nanobot"
+        assert kw["headers"]["User-Agent"] == "nanobot-search-test"
+        assert kw["json"] == {"query": "rust async"}
+        return _response(json={
+            "results": [
+                {
+                    "title": "Effective async Rust",
+                    "url": "https://example.com/async",
+                    "description": "Real-world async patterns",
+                    "snippet": "ignored when description present",
+                }
+            ]
+        })
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    monkeypatch.delenv("KEENABLE_API_KEY", raising=False)
+    tool = _tool(provider="keenable", user_agent="nanobot-search-test")
+    result = await tool.execute(query="rust async", count=1)
+
+    assert "Effective async Rust" in result
+    assert "https://example.com/async" in result
+    assert "Real-world async patterns" in result
+
+
+@pytest.mark.asyncio
+async def test_keenable_search_with_api_key_uses_authenticated_endpoint(monkeypatch):
+    async def mock_post(self, url, **kw):
+        assert url == "https://api.keenable.ai/v1/search"
+        assert kw["headers"]["X-API-Key"] == "keen-key"
+        assert kw["headers"]["X-Keenable-Title"] == "nanobot"
+        return _response(json={
+            "results": [{"title": "Auth result", "url": "https://example.com", "snippet": "snip"}]
+        })
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    tool = _tool(provider="keenable", api_key="keen-key")
+    result = await tool.execute(query="test", count=1)
+
+    assert "Auth result" in result
+    assert "snip" in result
+
+
+@pytest.mark.asyncio
+async def test_keenable_is_concurrency_safe_without_api_key(monkeypatch):
+    monkeypatch.delenv("KEENABLE_API_KEY", raising=False)
+    tool = _tool(provider="keenable")
+    assert tool.exclusive is False
+    assert tool.concurrency_safe is True
+
+
+@pytest.mark.asyncio
+async def test_keenable_rate_limited(monkeypatch):
+    async def mock_post(self, url, **kw):
+        return _response(status=429, json={"error": "rate limit"})
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    monkeypatch.delenv("KEENABLE_API_KEY", raising=False)
+    tool = _tool(provider="keenable")
+    result = await tool.execute(query="test")
+
+    assert "Keenable search rate limited" in result
+
+
+@pytest.mark.asyncio
 async def test_olostep_search_formats_answer_and_sources(monkeypatch):
     from types import SimpleNamespace
 

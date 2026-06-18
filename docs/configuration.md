@@ -1449,6 +1449,7 @@ By default, web search uses `duckduckgo`, and it works out of the box without an
 
 | Provider | Config fields | Env var fallback | Free |
 |----------|--------------|------------------|------|
+| `keenable` | `apiKey` (optional) | `KEENABLE_API_KEY` | Yes (no key needed; key raises limits) |
 | `brave` | `apiKey` | `BRAVE_API_KEY` | No |
 | `tavily` | `apiKey` | `TAVILY_API_KEY` | No |
 | `jina` | `apiKey` | `JINA_API_KEY` | Free tier (10M tokens) |
@@ -1458,6 +1459,23 @@ By default, web search uses `duckduckgo`, and it works out of the box without an
 | `volcengine` | `apiKey` | `VOLCENGINE_SEARCH_API_KEY` or `WEB_SEARCH_API_KEY` | Monthly quota, then paid |
 | `searxng` | `baseUrl` | `SEARXNG_BASE_URL` | Yes (self-hosted) |
 | `duckduckgo` (default) | — | — | Yes |
+
+**Keenable** (works without an API key on the free tier):
+```json
+{
+  "tools": {
+    "web": {
+      "search": {
+        "provider": "keenable"
+      }
+    }
+  }
+}
+```
+
+Keenable search works out of the box with no account. The free tier is limited to
+1,000 requests/hour. Set `apiKey` (or `KEENABLE_API_KEY`) from
+[keenable.ai](https://keenable.ai) to remove the hourly limit.
 
 **Brave:**
 ```json
@@ -1596,7 +1614,7 @@ You can also set `WEB_SEARCH_API_KEY` for compatibility with the Volcengine web-
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `provider` | string | `"duckduckgo"` | Search backend: `brave`, `tavily`, `jina`, `kagi`, `olostep`, `bocha`, `volcengine`, `searxng`, `duckduckgo` |
+| `provider` | string | `"duckduckgo"` | Search backend: `keenable`, `brave`, `tavily`, `jina`, `kagi`, `olostep`, `bocha`, `volcengine`, `searxng`, `duckduckgo` |
 | `apiKey` | string | `""` | API key for API-backed search providers |
 | `baseUrl` | string | `""` | Base URL for SearXNG |
 | `maxResults` | integer | `5` | Results per search (1–10) |
