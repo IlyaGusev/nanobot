@@ -408,7 +408,7 @@ class WebSearchTool(Tool):
                         "or set an apiKey for higher limits."
                     )
                 r.raise_for_status()
-            results = r.json().get("results", []) or []
+            results = r.json().get("results", [])
             items = [
                 {
                     "title": x.get("title", ""),
@@ -416,7 +416,6 @@ class WebSearchTool(Tool):
                     "content": x.get("description", "") or x.get("snippet", ""),
                 }
                 for x in results
-                if isinstance(x, dict)
             ]
             return _format_results(query, items, n)
         except httpx.HTTPStatusError as e:
